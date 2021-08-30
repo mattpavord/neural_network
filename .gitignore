@@ -1,0 +1,6 @@
+*.pyc
+*.swp
+*.orig
+.DS_Store
+/.idea
+*.pickle
