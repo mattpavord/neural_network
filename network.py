@@ -13,10 +13,9 @@ class Network:
     Ref - http://neuralnetworksanddeeplearning.com/chap2.html
     """
 
-
-    training_sample_size = 20
+    training_sample_size = 5000
     neuron_sizes = [784, 16, 10]
-    step_size = 0.4
+    step_size = 3
 
     def __init__(self):
         self.weights, self.biases = self.get_empty_weight_bias_shapes()
@@ -103,26 +102,24 @@ class Network:
             error_vectors.insert(0, error_vector)
         return error_vectors
 
-    def train(self, img_data, expected_data, n_iterations=100):
+    def train(self, img_data, expected_data, n_iterations=1000):
         """
         Adjusts weights using a gradient descent method
         img_data: Array of 2D image vectors
         expected_data: Array of values
         n_iterations(int): Number of gradient descent iterations
         """
-        dx = 0.001
-
+        prev_n_correct = []
         for _ in range(n_iterations):
             test_indexes = random.sample(range(len(img_data)), self.training_sample_size)
             img_sample = img_data[test_indexes]
             expected_sample = expected_data[test_indexes]
-            cost = self.cost_function(img_sample, expected_sample)
 
+            n_correct = 0
             delta_weights, delta_biases = self.get_empty_weight_bias_shapes()
             for img, expected in zip(img_sample, expected_sample):
                 img_v = utils.convert_2d_to_vector(img) / 256  # normalise values to between 0 and 1
                 expected_vector = utils.get_expected_vector(expected)
-
                 a_vectors, z_vectors = self.feed_forward(img_v)
                 error_vectors = self.backpropagate_error_vectors(expected_vector, a_vectors, z_vectors)
                 for i in range(len(error_vectors)):
@@ -130,15 +127,22 @@ class Network:
                     delta_biases[i] += error_vectors[i] / self.training_sample_size
                     # divide by self.training_sample_size so that we're iteratively calculating
                     # the average across all training tests
+                n_correct += 1 if np.argmax(a_vectors[-1]) == expected else 0
 
             for i in range(len(self.weights)):
-                self.weights[i] -= delta_weights[i] * dx
-                self.biases[i] -= delta_biases[i] * dx
+                self.weights[i] -= delta_weights[i] * self.step_size
+                self.biases[i] -= delta_biases[i] * self.step_size
 
-            new_cost = self.cost_function(img_sample, expected_sample)
-            if new_cost > cost:  # this shouldn't happen -> step size is too big
+            if len(prev_n_correct) > 5:
+                prev_n_correct.pop(0)
+
+            if len(prev_n_correct) > 3 and all([prev_n_correct[i-1] > prev_n_correct[i]
+                                                for i in range(1, len(prev_n_correct))]):
+                print("Reducing step size")
                 self.step_size /= 2
-            print(_, '\t', round(cost, 6), '\t', round(new_cost, 6))
+            prev_n_correct.append(n_correct)
+
+            print(_, '\t', n_correct, "/", self.training_sample_size, '\t', self.step_size)
 
 
 
