@@ -1,5 +1,4 @@
 import pickle
-from copy import deepcopy
 import random
 
 import numpy as np
@@ -59,15 +58,6 @@ class Network:
         output = self.get_output_vector(img)
         return np.argmax(output)
 
-    def cost_function(self, img_data, expected_data):
-        cost_elements = []
-        for img, expected in zip(img_data, expected_data):
-            expected_vector = np.zeros(10)
-            expected_vector[expected] = 1
-            output_vector = self.get_output_vector(img)
-            cost_elements.append(np.linalg.norm(output_vector - expected_vector) ** 2)
-        return sum(cost_elements) / (2 * self.training_sample_size)
-
     def feed_forward(self, img_vector: np.array):
         """
         Feed forward - from image vector calculate all activations and normalised activations
@@ -126,9 +116,7 @@ class Network:
                 error_vectors = self.backpropagate_error_vectors(expected_vector, a_vectors, z_vectors)
                 for i in range(len(error_vectors)):
                     delta_weights[i] += np.outer(error_vectors[i], a_vectors[i]) / self.training_sample_size
-                    delta_biases[i] += error_vectors[i] / self.training_sample_size
-                    # divide by self.training_sample_size so that we're iteratively calculating
-                    # the average across all training tests
+                    delta_biases[i] += error_vectors[i] / self.training_sample_size  # average across training samples
                 n_correct += 1 if np.argmax(a_vectors[-1]) == expected else 0
 
             for i in range(len(self.weights)):
@@ -137,7 +125,6 @@ class Network:
 
             if len(prev_n_correct) > 5:
                 prev_n_correct.pop(0)
-
             if len(prev_n_correct) > 3 and all([prev_n_correct[i-1] > prev_n_correct[i]
                                                 for i in range(1, len(prev_n_correct))]):
                 print("Reducing step size")
