@@ -23,7 +23,7 @@ class Network:
         except (FileNotFoundError, EOFError):
             print("Could not find existing memory, starting from scratch")
             self.weights = [
-                np.random.rand((self.neuron_sizes[i+1], self.neuron_sizes[i])) * 2 - 1
+                np.random.rand(self.neuron_sizes[i+1], self.neuron_sizes[i]) * 2 - 1
                 for i in range(len(self.neuron_sizes) - 1)
             ]
 
